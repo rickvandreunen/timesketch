@@ -941,7 +941,7 @@ class MarkEventsWithTimelineIdentifier(resources.ResourceMixin, Resource):
 
         searchindex_id = form.get("searchindex_id")
         searchindex_name = form.get("searchindex_name")
-
+        
         if not (searchindex_id or searchindex_name):
             abort(HTTP_STATUS_CODE_NOT_FOUND, "No search index information supplied.")
 
@@ -984,24 +984,53 @@ class MarkEventsWithTimelineIdentifier(resources.ResourceMixin, Resource):
                 "sketch ID ({1:d})".format(sketch.id, timeline.sketch.id),
             )
 
-        query_dsl = {
-            "script": {
-                "source": (
-                    f"ctx._source.__ts_timeline_id={timeline_id};"
-                    f"ctx._source.timesketch_label=[];"
-                ),
-                "lang": "painless",
-            },
-            "query": {
-                "bool": {
-                    "must_not": {
-                        "exists": {
-                            "field": "__ts_timeline_id",
+        timeline_filter_id = form.get("timeline_filter_id")
+        if timeline_filter_id:
+            query_dsl = {
+                "script": {
+                    "source": (
+                        f"ctx._source.__ts_timeline_id={timeline_id};"
+                        f"ctx._source.timesketch_label=[];"
+                    ),
+                    "lang": "painless",
+                },
+                "query": {                    
+                    "term": {
+                            "timeline_filter_id": timeline_filter_id
+                    },
+                    # "bool": {
+                    #     "must_not": {
+                    #         "exists": {
+                    #             "field": "__ts_timeline_id",
+                    #         }
+                    #     }
+                    # }
+                    # If above exists error : ValueError: Unable to add timeline 
+                    # identifier to data, with error [500] Internal Server Error 
+                    # Internal Server Error will be generated at:
+                    # timesketch\api_client\python\timesketch_api_client\sketch.py", 
+                    # line 1811, in generate_timeline_from_es_index
+                },
+            }
+        else:
+            query_dsl = {
+                "script": {
+                    "source": (
+                        f"ctx._source.__ts_timeline_id={timeline_id};"
+                        f"ctx._source.timesketch_label=[];"
+                    ),
+                    "lang": "painless",
+                },
+                "query": {
+                    "bool": {
+                        "must_not": {
+                            "exists": {
+                                "field": "__ts_timeline_id",
+                            }
                         }
                     }
-                }
-            },
-        }
+                },
+            }
         # pylint: disable=unexpected-keyword-arg
         self.datastore.client.update_by_query(
             body=query_dsl,

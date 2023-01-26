@@ -109,7 +109,8 @@ class TimelineListResource(resources.ResourceMixin, Resource):
             for t in sketch.timelines
             if t.searchindex.id == searchindex_id
         ]
-
+        timeline_id = False
+        # FIXME
         if not timeline_id:
             return_code = HTTP_STATUS_CODE_CREATED
             timeline_name = form.get("timeline_name", searchindex.name)

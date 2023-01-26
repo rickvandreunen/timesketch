@@ -1674,6 +1674,7 @@ class Sketch(resource.BaseResource):
         self,
         es_index_name,
         name,
+        timeline_filter_id=None,
         index_name="",
         description="",
         provider="Manually added to OpenSearch",
@@ -1694,6 +1695,8 @@ class Sketch(resource.BaseResource):
             name: string with the name of the timeline.
             index_name: optional string for the SearchIndex name, defaults
                 to the same as the es_index_name.
+            timeline_filter_id: optional string to filter on documents in an
+            index.
             description: optional string with a description of the timeline.
             provider: optional string with the provider name for the data
                 source of the imported data. Defaults to "Manually added
@@ -1720,11 +1723,15 @@ class Sketch(resource.BaseResource):
             raise ValueError("Timeline name needs to be provided.")
 
         # Step 1: Make sure the index doesn't exist already.
-        for index_obj in self.api.list_searchindices():
-            if index_obj is None:
-                continue
-            if index_obj.index_name == es_index_name:
-                raise ValueError("Unable to add the ES index, since it already exists.")
+        if not timeline_filter_id:            
+            for index_obj in self.api.list_searchindices():
+                if index_obj is None:
+                    continue
+                if index_obj.index_name == es_index_name:
+                    raise ValueError("Unable to add the ES index, since it already exists.")
+        # This prevents adding of data into existing timeline thus it is commenten out for 
+        # this use case, in test_ingestion.py it is able to add 1
+        # timeline but none after that.
 
         # Step 2: Create a SearchIndex.
         resource_url = f"{self.api.api_root}/searchindices/"
@@ -1771,7 +1778,7 @@ class Sketch(resource.BaseResource):
         resource_url = f"{self.api.api_root}/sketches/{self.id}/timelines/"
         form_data = {"timeline": searchindex_id, "timeline_name": name}
         response = self.api.session.post(resource_url, json=form_data)
-
+        
         if response.status_code not in definitions.HTTP_STATUS_CODE_20X:
             error.error_message(
                 response, message="Error creating a timeline object", error=ValueError
@@ -1793,12 +1800,12 @@ class Sketch(resource.BaseResource):
             name=timeline_dict["name"],
             searchindex=timeline_dict["searchindex"]["index_name"],
         )
-
         # Step 5: Add the timeline ID into the dataset.
         resource_url = f"{self.api.api_root}/sketches/{self.id}/event/add_timeline_id/"
         form_data = {
             "searchindex_id": searchindex_id,
             "timeline_id": timeline_dict["id"],
+            "timeline_filter_id": timeline_filter_id,
         }
         response = self.api.session.post(resource_url, json=form_data)
 
