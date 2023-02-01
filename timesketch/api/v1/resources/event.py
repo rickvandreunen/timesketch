@@ -941,7 +941,7 @@ class MarkEventsWithTimelineIdentifier(resources.ResourceMixin, Resource):
 
         searchindex_id = form.get("searchindex_id")
         searchindex_name = form.get("searchindex_name")
-        
+
         if not (searchindex_id or searchindex_name):
             abort(HTTP_STATUS_CODE_NOT_FOUND, "No search index information supplied.")
 
@@ -984,8 +984,10 @@ class MarkEventsWithTimelineIdentifier(resources.ResourceMixin, Resource):
                 "sketch ID ({1:d})".format(sketch.id, timeline.sketch.id),
             )
 
+        """If timeline_filter_id exists, excecute query_dsl with timeline_filter_id 
+        condition otherwise resume normal function"""
         timeline_filter_id = form.get("timeline_filter_id")
-        if timeline_filter_id:
+        if timeline_filter_id is not None:
             query_dsl = {
                 "script": {
                     "source": (
@@ -994,22 +996,11 @@ class MarkEventsWithTimelineIdentifier(resources.ResourceMixin, Resource):
                     ),
                     "lang": "painless",
                 },
-                "query": {                    
-                    "term": {
-                            "timeline_filter_id": timeline_filter_id
-                    },
-                    # "bool": {
-                    #     "must_not": {
-                    #         "exists": {
-                    #             "field": "__ts_timeline_id",
-                    #         }
-                    #     }
-                    # }
-                    # If above exists error : ValueError: Unable to add timeline 
-                    # identifier to data, with error [500] Internal Server Error 
-                    # Internal Server Error will be generated at:
-                    # timesketch\api_client\python\timesketch_api_client\sketch.py", 
-                    # line 1811, in generate_timeline_from_es_index
+                "query": {
+                    "bool": {
+                        "filter": {"term": {"timeline_filter_id": timeline_filter_id}},
+                        "must_not": {"exists": {"field": "__ts_timeline_id"}},
+                    }
                 },
             }
         else:
