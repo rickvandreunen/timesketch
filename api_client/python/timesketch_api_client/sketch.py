@@ -1695,8 +1695,7 @@ class Sketch(resource.BaseResource):
             name: string with the name of the timeline.
             index_name: optional string for the SearchIndex name, defaults
                 to the same as the es_index_name.
-            timeline_filter_id: optional integer to filter on documents in an
-            index.
+            timeline_filter_id: optional string to filter on documents in an index.
             description: optional string with a description of the timeline.
             provider: optional string with the provider name for the data
                 source of the imported data. Defaults to "Manually added
@@ -1723,9 +1722,9 @@ class Sketch(resource.BaseResource):
             raise ValueError("Timeline name needs to be provided.")
 
         # Step 1: Make sure the index doesn't exist already.
-        # Only excecuted if timeline_filter_id does not exist
-        # since otherwise no more than 1 timeline can be created
-        if not timeline_filter_id:
+        """ If a timeline identifier is used this step is skipped
+        otherwise no more than one timeline can be created from an index """
+        if timeline_filter_id is None:
             for index_obj in self.api.list_searchindices():
                 if index_obj is None:
                     continue
