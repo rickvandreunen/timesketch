@@ -104,10 +104,10 @@ class TimelineListResource(resources.ResourceMixin, Resource):
                 "Unable to create a timeline using a deleted search index",
             )
 
-        '''Removed timeline_id defenition since it malfunctioned when multiple
+        """Removed timeline_id defenition since it malfunctioned when multiple
         timelines were created within a sketch. First sketch would be correct
         but the second timeline would inherit the id from searchindex_id. This 
-        would prevent the creation of a second timeline'''
+        would prevent the creation of a second timeline"""
 
         return_code = HTTP_STATUS_CODE_CREATED
         timeline_name = form.get("timeline_name", searchindex.name)
@@ -135,10 +135,10 @@ class TimelineListResource(resources.ResourceMixin, Resource):
         db_session.add(timeline)
         db_session.commit()
 
-        '''Implemented timeline_id definition below since the below function
+        """Implemented timeline_id definition below since the below function
         requires the timeline_id value. Beware that the second timeline_id will
         still be incorrect as it would be above. This way the below implementation
-        does not completely break.'''
+        does not completely break."""
         timeline_id = [
             t.searchindex.id
             for t in sketch.timelines
